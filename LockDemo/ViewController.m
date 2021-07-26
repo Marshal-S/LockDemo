@@ -49,7 +49,7 @@
     //wait 可以理解为加锁操作，信号值小于0会休眠当前wait所在线程
     dispatch_semaphore_wait(_semaphore, DISPATCH_TIME_FOREVER);
     _money++;
-    //signal 可以解锁解锁
+    //signal 可以解锁
     dispatch_semaphore_signal(_semaphore);
 }
 
@@ -105,22 +105,23 @@
 }
 
 //情景锁还加入了信号量机制,wait和signal，可以利用其完成生产消费者模式的功能
-//生产者: 妈爸给孩子钱
+//生产者: 妈爸挣了一天的钱，储蓄值增加
 - (void)conditionPlusMoney {
     [_condition lock];
-    //信号量增加，早上给孩子饭钱
+    //信号量增加，有储蓄了，可以开放花钱功能了
     if (_money++ < 0) {
         [_condition signal];
     }
     [_condition unlock];
 }
-//消费者，孩子花爸妈的钱，手里还有钱直接花，没钱就不花，饿着等妈爸的钱，拿到钱时立即解锁花钱技能(money--)
+//消费者，服务有储蓄，拿到钱时立即解锁花钱技能(money--)
 - (void)conditionSubMoney {
     [_condition lock];
     if (_money == 0) {
-        //信号量减少阻塞，没钱了，停止花钱，妈爸给钱后，不用等待，直接花钱去
+        //信号量减少阻塞，打算买东西，却没钱了，停止花钱，等发工资再买东西
         [_condition wait];
     }
+    //由于之前的wait，当signal解锁后，会走到这里，开始购买想买的东西，储蓄值--
     _money--;
     [_condition unlock];
 }
@@ -130,7 +131,7 @@
     _conditionLock = [[NSConditionLock alloc] initWithCondition:1]; //可以更改值测试为0测试结果
     //加锁，当条件condition为传入的condition时，方能解锁
     //lockWhenCondition:(NSInteger)condition
-    //更新condition的值并解锁指定condition的锁
+    //更新condition的值，并解锁指定condition的锁
     //unlockWithCondition:(NSInteger)condition
 }
 
@@ -179,10 +180,11 @@
 
 #pragma mark --pthread递归锁
 - (void)pthreadMutexRecursive {
+    //初始化锁的递归功能
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-    
+    //互斥锁初始化时，绑定递归锁功能模块
     pthread_mutex_init(&_pMutexLock, &attr);
     
     //使用完毕后在合适的地方销毁，例如dealloc
@@ -207,7 +209,7 @@
     });
 }
 
-#pragma mark --递归锁NSRecursiveLock
+#pragma mark --递归锁NSRecursiveLock，实现了NSLocking协议，支持默认的互斥锁lock、unlock
 - (void)NSRecursiveLock {
     _recursive = [[NSRecursiveLock alloc] init];
 }
@@ -233,13 +235,12 @@
 
 #pragma mark --同步锁synchronized
 - (void)synchronized {
-    //使用简单，直接对代码块加同步锁，此代码不会被多个线程直接执行，相当于里面的任务被放到了一个同步队列依次执行
+    //使用简单，直接对代码块加同步锁，此代码不会被多个线程直接执行
+    //可以间接理解为里面的任务被放到了一个同步队列依次执行（实际实现未知）
     @synchronized (self) {
         self->_money++;
     }
 }
-
-
 
 
 @end

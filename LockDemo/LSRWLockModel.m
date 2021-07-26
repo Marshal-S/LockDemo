@@ -13,7 +13,6 @@
     //当同时重写set和geter方法时，则不会初始化字段
     NSString *_lock1;
     NSString *_lock2;
-    NSString *_lock3;
     
     pthread_rwlock_t _lock;
     dispatch_queue_t _queue;
@@ -41,10 +40,6 @@
     //pthread_rwlock_destroy(&_lock);
 }
 
-- (void)setupGCDRW {
-    _queue = dispatch_queue_create("RWLockQueue", DISPATCH_QUEUE_CONCURRENT);
-}
-
 #pragma mark --通过pthread读写锁来设置
 - (void)setLock1:(NSString *)lock1 {
     pthread_rwlock_wrlock(&_lock);
@@ -60,6 +55,10 @@
     return lock1;
 }
 
+- (void)setupGCDRW {
+    _queue = dispatch_queue_create("RWLockQueue", DISPATCH_QUEUE_CONCURRENT);
+}
+
 #pragma mark --通过GCD的barrier栅栏功能实现
 //通过GCD的barrier栅栏功能实现，缺点是需要借助自定义队列实现，且get方法无法重写系统的，只能以回调的方式获取值
 //barrier功能使用global队列会失效，全局队列是无法阻塞的，里面有系统的一些任务执行
@@ -73,6 +72,5 @@
         block(self->_lock2);
     });
 }
-
 
 @end
