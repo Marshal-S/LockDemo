@@ -110,7 +110,8 @@
     [_condition lock];
     //信号量增加，有储蓄了，可以开放花钱功能了
     if (_money++ < 0) {
-        [_condition signal];
+        [_condition signal];    //释放第一个阻塞的线程
+        //[_condition broadcast]; //释放所有阻塞的线程
     }
     [_condition unlock];
 }
